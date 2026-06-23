@@ -1,0 +1,18 @@
+{
+	"node": "n8n-nodes-servicefusion",
+	"nodeVersion": "1.0",
+	"codexVersion": "1.0",
+	"categories": ["Data & Storage", "Communication"],
+	"resources": {
+		"credentialDocumentation": [
+			{
+				"url": "https://github.com/rashidazarang/servicefusion-adapter?tab=readme-ov-file#configuration"
+			}
+		],
+		"primaryDocumentation": [
+			{
+				"url": "https://github.com/rashidazarang/servicefusion-adapter?tab=readme-ov-file"
+			}
+		]
+	}
+}
