@@ -8,7 +8,7 @@ import type {
 } from 'n8n-workflow';
 import { NodeConnectionTypes, NodeOperationError, NodeApiError } from 'n8n-workflow';
 
-import { ServiceFusionAdapter } from '@pmip/servicefusion-adapter';
+import { ServiceFusionAdapter } from './vendor/servicefusion-adapter.bundle';
 
 import { createAdapter, disconnectAdapter } from './GenericFunctions';
 

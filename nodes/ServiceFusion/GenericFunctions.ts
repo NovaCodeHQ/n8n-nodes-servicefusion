@@ -1,5 +1,5 @@
 import type { ICredentialDataDecryptedObject } from 'n8n-workflow';
-import { ServiceFusionAdapter } from '@pmip/servicefusion-adapter';
+import { ServiceFusionAdapter } from './vendor/servicefusion-adapter.bundle';
 
 /**
  * Create a configured ServiceFusionAdapter from n8n credential data.

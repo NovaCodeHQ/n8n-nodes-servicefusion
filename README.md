@@ -103,7 +103,7 @@ The node uses the adapter's OAuth/token handling internally.
 
 ## Notes
 
-- This package uses `@pmip/servicefusion-adapter` via an npm alias to the currently published adapter package.
+- This package vendors a bundled copy of the ServiceFusion adapter into the published `dist/` output so it can stay self-hosted and still satisfy n8n's no-runtime-dependencies packaging rule.
 - For local `n8n-node dev`, Node.js 22 LTS is recommended for the smoothest `isolated-vm` compatibility.
 
 ## Resources

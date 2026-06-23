@@ -1,46 +1,58 @@
 {
-  "name": "n8n-nodes-servicefusion",
-  "version": "0.1.0",
-  "description": "ServiceFusion field service management integration for n8n",
-  "license": "MIT",
-  "homepage": "https://github.com/ampmlock/n8n-nodes-servicefusion",
-  "keywords": [
-    "n8n-community-node-package",
-    "servicefusion",
-    "field-service",
-    "n8n-nodes-servicefusion"
-  ],
-  "author": { "name": "AMPM Lock", "email": "davidk@ampmlock.com" },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/ampmlock/n8n-nodes-servicefusion"
-  },
-  "scripts": {
-    "build": "n8n-node build",
-    "build:watch": "tsc --watch",
-    "dev": "n8n-node dev",
-    "lint": "n8n-node lint",
-    "lint:fix": "n8n-node lint --fix",
-    "release": "n8n-node release",
-    "prepublishOnly": "n8n-node prerelease"
-  },
-  "files": ["dist"],
-  "n8n": {
-    "n8nNodesApiVersion": 1,
-    "strict": false,
-    "credentials": ["dist/credentials/ServiceFusionApi.credentials.js"],
-    "nodes": ["dist/nodes/ServiceFusion/ServiceFusion.node.js"]
-  },
-  "dependencies": {
-    "@pmip/servicefusion-adapter": "npm:@rashidazarang/servicefusion-adapter@^1.0.0"
-  },
-  "devDependencies": {
-    "@n8n/node-cli": "*",
-    "eslint": "9.32.0",
-    "n8n-workflow": "^2.16.0",
-    "prettier": "3.6.2",
-    "release-it": "^19.0.4",
-    "typescript": "5.9.2"
-  },
-  "peerDependencies": { "n8n-workflow": "*" }
+	"name": "@NovaCodeHQ/n8n-nodes-servicefusion",
+	"version": "0.1.0",
+	"description": "ServiceFusion field service management integration for n8n",
+	"license": "MIT",
+	"homepage": "https://github.com/NovaCodeHQ/n8n-nodes-servicefusion",
+	"keywords": [
+		"n8n-community-node-package",
+		"servicefusion",
+		"field-service",
+		"n8n-nodes-servicefusion"
+	],
+	"author": {
+		"name": "NovaCodeHQ",
+		"email": "support@novacodehq.com"
+	},
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/NovaCodeHQ/n8n-nodes-servicefusion"
+	},
+	"scripts": {
+		"bundle:adapter": "node scripts/bundle-servicefusion-adapter.mjs",
+		"copy:vendor-assets": "node scripts/copy-vendor-assets.mjs",
+		"build": "npm run bundle:adapter && n8n-node build && npm run copy:vendor-assets",
+		"build:watch": "tsc --watch",
+		"dev": "n8n-node dev",
+		"lint": "npm run bundle:adapter && n8n-node lint",
+		"lint:fix": "npm run bundle:adapter && n8n-node lint --fix",
+		"release": "n8n-node release",
+		"prepublishOnly": "n8n-node prerelease"
+	},
+	"files": [
+		"dist"
+	],
+	"n8n": {
+		"n8nNodesApiVersion": 1,
+		"strict": false,
+		"credentials": [
+			"dist/credentials/ServiceFusionApi.credentials.js"
+		],
+		"nodes": [
+			"dist/nodes/ServiceFusion/ServiceFusion.node.js"
+		]
+	},
+	"devDependencies": {
+		"@n8n/node-cli": "*",
+		"@pmip/servicefusion-adapter": "npm:@rashidazarang/servicefusion-adapter@^1.0.0",
+		"esbuild": "^0.25.6",
+		"eslint": "9.32.0",
+		"n8n-workflow": "^2.16.0",
+		"prettier": "3.6.2",
+		"release-it": "^19.0.4",
+		"typescript": "5.9.2"
+	},
+	"peerDependencies": {
+		"n8n-workflow": "*"
+	}
 }
