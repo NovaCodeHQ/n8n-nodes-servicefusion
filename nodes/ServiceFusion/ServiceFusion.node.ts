@@ -24,7 +24,7 @@ type Resource = (typeof RESOURCES)[number];
 const OPERATIONS: Record<Resource, string[]> = {
 	customer: ['getAll', 'get', 'create', 'update', 'delete', 'search'],
 	job: ['getAll', 'get', 'create', 'update', 'delete', 'search', 'getAllPaged', 'batchSync'],
-	estimate: ['getAll', 'get', 'create', 'update', 'convertToJob'],
+	estimate: ['getAll', 'get', 'create', 'update', 'convertToJob', 'search'],
 	invoice: ['getAll', 'get', 'create', 'update', 'send'],
 	technician: ['getAll', 'get', 'getSchedule', 'assignJob'],
 	webhook: ['getAll', 'create', 'delete'],
@@ -637,7 +637,147 @@ function allProperties(): INodeProperties[] {
 		name: 'estimateJobId',
 		type: 'string',
 		default: '',
-		displayOptions: { show: { resource: [E], operation: ['getAll'] } },
+		displayOptions: { show: { resource: [E], operation: ['getAll', 'search'] } },
+	} as INodeProperties);
+	props.push({
+		displayName: 'Status',
+		name: 'estimateSearchStatus',
+		type: 'string',
+		default: '',
+		displayOptions: { show: { resource: [E], operation: ['search'] } },
+	} as INodeProperties);
+	props.push({
+		displayName: 'Number',
+		name: 'estimateSearchNumber',
+		type: 'string',
+		default: '',
+		displayOptions: { show: { resource: [E], operation: ['search'] } },
+	} as INodeProperties);
+	props.push({
+		displayName: 'PO Number',
+		name: 'estimateSearchPoNumber',
+		type: 'string',
+		default: '',
+		displayOptions: { show: { resource: [E], operation: ['search'] } },
+	} as INodeProperties);
+	props.push({
+		displayName: 'Customer Name',
+		name: 'estimateSearchCustomerName',
+		type: 'string',
+		default: '',
+		displayOptions: { show: { resource: [E], operation: ['search'] } },
+	} as INodeProperties);
+	props.push({
+		displayName: 'Parent Customer Name',
+		name: 'estimateSearchParentCustomerName',
+		type: 'string',
+		default: '',
+		displayOptions: { show: { resource: [E], operation: ['search'] } },
+	} as INodeProperties);
+	props.push({
+		displayName: 'Contact First Name',
+		name: 'estimateSearchContactFirstName',
+		type: 'string',
+		default: '',
+		displayOptions: { show: { resource: [E], operation: ['search'] } },
+	} as INodeProperties);
+	props.push({
+		displayName: 'Contact Last Name',
+		name: 'estimateSearchContactLastName',
+		type: 'string',
+		default: '',
+		displayOptions: { show: { resource: [E], operation: ['search'] } },
+	} as INodeProperties);
+	props.push({
+		displayName: 'Address',
+		name: 'estimateSearchAddress',
+		type: 'string',
+		default: '',
+		displayOptions: { show: { resource: [E], operation: ['search'] } },
+	} as INodeProperties);
+	props.push({
+		displayName: 'City',
+		name: 'estimateSearchCity',
+		type: 'string',
+		default: '',
+		displayOptions: { show: { resource: [E], operation: ['search'] } },
+	} as INodeProperties);
+	props.push({
+		displayName: 'Zip Code',
+		name: 'estimateSearchZipCode',
+		type: 'string',
+		default: '',
+		displayOptions: { show: { resource: [E], operation: ['search'] } },
+	} as INodeProperties);
+	props.push({
+		displayName: 'Phone',
+		name: 'estimateSearchPhone',
+		type: 'string',
+		default: '',
+		displayOptions: { show: { resource: [E], operation: ['search'] } },
+	} as INodeProperties);
+	props.push({
+		displayName: 'Email',
+		name: 'estimateSearchEmail',
+		type: 'string',
+		default: '',
+		displayOptions: { show: { resource: [E], operation: ['search'] } },
+	} as INodeProperties);
+	props.push({
+		displayName: 'Category',
+		name: 'estimateSearchCategory',
+		type: 'string',
+		default: '',
+		displayOptions: { show: { resource: [E], operation: ['search'] } },
+	} as INodeProperties);
+	props.push({
+		displayName: 'Source',
+		name: 'estimateSearchSource',
+		type: 'string',
+		default: '',
+		displayOptions: { show: { resource: [E], operation: ['search'] } },
+	} as INodeProperties);
+	props.push({
+		displayName: 'Start Date From',
+		name: 'estimateSearchStartDateFrom',
+		type: 'dateTime',
+		default: '',
+		displayOptions: { show: { resource: [E], operation: ['search'] } },
+	} as INodeProperties);
+	props.push({
+		displayName: 'Start Date To',
+		name: 'estimateSearchStartDateTo',
+		type: 'dateTime',
+		default: '',
+		displayOptions: { show: { resource: [E], operation: ['search'] } },
+	} as INodeProperties);
+	props.push({
+		displayName: 'End Date From',
+		name: 'estimateSearchEndDateFrom',
+		type: 'dateTime',
+		default: '',
+		displayOptions: { show: { resource: [E], operation: ['search'] } },
+	} as INodeProperties);
+	props.push({
+		displayName: 'End Date To',
+		name: 'estimateSearchEndDateTo',
+		type: 'dateTime',
+		default: '',
+		displayOptions: { show: { resource: [E], operation: ['search'] } },
+	} as INodeProperties);
+	props.push({
+		displayName: 'Requested Date From',
+		name: 'estimateSearchRequestedDateFrom',
+		type: 'dateTime',
+		default: '',
+		displayOptions: { show: { resource: [E], operation: ['search'] } },
+	} as INodeProperties);
+	props.push({
+		displayName: 'Requested Date To',
+		name: 'estimateSearchRequestedDateTo',
+		type: 'dateTime',
+		default: '',
+		displayOptions: { show: { resource: [E], operation: ['search'] } },
 	} as INodeProperties);
 	props.push({
 		displayName: 'Customer ID',
@@ -852,6 +992,7 @@ async function executeCustomer(
 			const r = await adapter.getCustomers({
 				limit: (p('limit') as number) || undefined,
 				offset: (p('offset') as number) || undefined,
+				sortBy: 'customer_name',
 			});
 			return mapListResponse(r);
 		}
@@ -1064,6 +1205,60 @@ async function executeEstimate(
 			const r = await adapter.convertEstimateToJob(p('estimateId') as string);
 			return [{ json: r as unknown as IDataObject }];
 		}
+		case 'search': {
+			const requestAdapter = adapter as ServiceFusionAdapter & {
+				request: (config: {
+					method: string;
+					params?: Record<string, string>;
+					url: string;
+				}) => Promise<unknown>;
+			};
+			const jobId = p('estimateJobId') as string;
+			const params: Record<string, string> = {};
+			if (p('estimateSearchStatus'))
+				params['filters[status]'] = p('estimateSearchStatus') as string;
+			if (p('estimateSearchNumber'))
+				params['filters[number]'] = p('estimateSearchNumber') as string;
+			if (p('estimateSearchPoNumber'))
+				params['filters[po_number]'] = p('estimateSearchPoNumber') as string;
+			if (p('estimateSearchCustomerName'))
+				params['filters[customer_name]'] = p('estimateSearchCustomerName') as string;
+			if (p('estimateSearchParentCustomerName'))
+				params['filters[parent_customer_name]'] = p('estimateSearchParentCustomerName') as string;
+			if (p('estimateSearchContactFirstName'))
+				params['filters[contact_first_name]'] = p('estimateSearchContactFirstName') as string;
+			if (p('estimateSearchContactLastName'))
+				params['filters[contact_last_name]'] = p('estimateSearchContactLastName') as string;
+			if (p('estimateSearchAddress'))
+				params['filters[address]'] = p('estimateSearchAddress') as string;
+			if (p('estimateSearchCity')) params['filters[city]'] = p('estimateSearchCity') as string;
+			if (p('estimateSearchZipCode'))
+				params['filters[zip_code]'] = p('estimateSearchZipCode') as string;
+			if (p('estimateSearchPhone')) params['filters[phone]'] = p('estimateSearchPhone') as string;
+			if (p('estimateSearchEmail')) params['filters[email]'] = p('estimateSearchEmail') as string;
+			if (p('estimateSearchCategory'))
+				params['filters[category]'] = p('estimateSearchCategory') as string;
+			if (p('estimateSearchSource'))
+				params['filters[source]'] = p('estimateSearchSource') as string;
+			if (p('estimateSearchStartDateFrom'))
+				params['filters[start_date][gte]'] = p('estimateSearchStartDateFrom') as string;
+			if (p('estimateSearchStartDateTo'))
+				params['filters[start_date][lte]'] = p('estimateSearchStartDateTo') as string;
+			if (p('estimateSearchEndDateFrom'))
+				params['filters[end_date][gte]'] = p('estimateSearchEndDateFrom') as string;
+			if (p('estimateSearchEndDateTo'))
+				params['filters[end_date][lte]'] = p('estimateSearchEndDateTo') as string;
+			if (p('estimateSearchRequestedDateFrom'))
+				params['filters[requested_date][gte]'] = p('estimateSearchRequestedDateFrom') as string;
+			if (p('estimateSearchRequestedDateTo'))
+				params['filters[requested_date][lte]'] = p('estimateSearchRequestedDateTo') as string;
+			const r = await requestAdapter.request({
+				method: 'GET',
+				url: jobId ? `/jobs/${jobId}/estimates` : '/estimates',
+				params,
+			});
+			return mapListResponse(r);
+		}
 		default:
 			throw new NodeOperationError(ctx.getNode(), `Unknown estimate operation: ${operation}`);
 	}
@@ -1249,7 +1444,7 @@ export class ServiceFusion implements INodeType {
 				});
 				try {
 					await adapter.connect();
-					await adapter.getCustomers({ limit: 1 });
+					await adapter.getCustomers({ limit: 1, sortBy: 'customer_name' });
 					return { status: 'OK', message: 'Connected successfully' };
 				} catch (error) {
 					return { status: 'Error', message: (error as Error).message };
