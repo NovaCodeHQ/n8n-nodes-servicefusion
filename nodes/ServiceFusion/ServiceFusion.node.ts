@@ -29,7 +29,6 @@ const RESOURCES = [
 	'paymentType',
 	'source',
 	'calendarTask',
-	'webhook',
 ] as const;
 type Resource = (typeof RESOURCES)[number];
 
@@ -44,7 +43,6 @@ const RESOURCE_LABELS: Record<Resource, string> = {
 	paymentType: 'Payment Type',
 	source: 'Source',
 	calendarTask: 'Calendar Task',
-	webhook: 'Webhook',
 };
 
 const OPERATIONS: Record<Resource, string[]> = {
@@ -58,7 +56,6 @@ const OPERATIONS: Record<Resource, string[]> = {
 	paymentType: ['getAll', 'get'],
 	source: ['getAll', 'get'],
 	calendarTask: ['getAll', 'get'],
-	webhook: ['create', 'delete'],
 };
 
 type ServiceFusionError = Error & {
@@ -297,8 +294,7 @@ function allProperties(): INodeProperties[] {
 		JS = 'jobStatus',
 		PT = 'paymentType',
 		S = 'source',
-		CT = 'calendarTask',
-		W = 'webhook';
+		CT = 'calendarTask';
 	props.push({
 		displayName: 'Customer ID',
 		name: 'customerId',
@@ -1098,40 +1094,6 @@ function allProperties(): INodeProperties[] {
 		required: true,
 		displayOptions: { show: { resource: [T], operation: ['assignJob'] } },
 	} as INodeProperties);
-	props.push({
-		displayName: 'URL',
-		name: 'webhookUrl',
-		type: 'string',
-		default: '',
-		required: true,
-		description: 'Webhook callback URL',
-		displayOptions: { show: { resource: [W], operation: ['create'] } },
-	} as INodeProperties);
-	props.push({
-		displayName: 'Events (JSON Array)',
-		name: 'webhookEvents',
-		type: 'json',
-		default: '',
-		typeOptions: { alwaysOpenEditWindow: true },
-		displayOptions: { show: { resource: [W], operation: ['create'] } },
-		description: 'Array of event strings',
-	} as INodeProperties);
-	props.push({
-		displayName: 'Secret',
-		name: 'webhookSecret',
-		type: 'string',
-		typeOptions: { password: true },
-		default: '',
-		displayOptions: { show: { resource: [W], operation: ['create'] } },
-	} as INodeProperties);
-	props.push({
-		displayName: 'Webhook ID',
-		name: 'webhookId',
-		type: 'string',
-		default: '',
-		required: true,
-		displayOptions: { show: { resource: [W], operation: ['delete'] } },
-	} as INodeProperties);
 	addSimpleListResourceProperties(
 		props,
 		JC,
@@ -1639,44 +1601,6 @@ async function executeCalendarTask(
 	});
 }
 
-async function executeWebhook(
-	ctx: IExecuteFunctions,
-	adapter: ServiceFusionAdapter,
-	operation: string,
-	itemIndex: number,
-): Promise<INodeExecutionData[]> {
-	const p = (n: string, f?: unknown) => ctx.getNodeParameter(n, itemIndex, f);
-	switch (operation) {
-		case 'getAll': {
-			throw new NodeOperationError(
-				ctx.getNode(),
-				'ServiceFusion does not expose a supported webhook list endpoint for this node. Use Webhook → Create or Delete instead.',
-			);
-		}
-		case 'create': {
-			const d: Record<string, unknown> = {};
-			if (p('webhookUrl')) d.url = p('webhookUrl');
-			if (p('webhookEvents')) {
-				try {
-					d.events = JSON.parse(p('webhookEvents') as string);
-				} catch {
-					d.events = [p('webhookEvents')];
-				}
-			}
-			if (p('webhookSecret')) d.secret = p('webhookSecret');
-			const r = await adapter.createWebhook(d);
-			return [{ json: r as unknown as IDataObject }];
-		}
-		case 'delete': {
-			const id = p('webhookId') as string;
-			await adapter.deleteWebhook(id);
-			return [{ json: { success: true, webhookId: id } }];
-		}
-		default:
-			throw new NodeOperationError(ctx.getNode(), `Unknown webhook operation: ${operation}`);
-	}
-}
-
 async function executeOp(
 	ctx: IExecuteFunctions,
 	adapter: ServiceFusionAdapter,
@@ -1705,8 +1629,6 @@ async function executeOp(
 			return executeSource(ctx, adapter, operation, itemIndex);
 		case 'calendarTask':
 			return executeCalendarTask(ctx, adapter, operation, itemIndex);
-		case 'webhook':
-			return executeWebhook(ctx, adapter, operation, itemIndex);
 		default:
 			throw new NodeOperationError(ctx.getNode(), `Unknown resource: ${resource}`);
 	}
