@@ -164,6 +164,14 @@ function mapListResponse(response: unknown): INodeExecutionData[] {
 	return toItemArray(response).map((item) => ({ json: item }));
 }
 
+function formatDateOnly(value: string): string {
+	return new Date(value).toISOString().slice(0, 10);
+}
+
+function formatDateTime(value: string): string {
+	return new Date(value).toISOString();
+}
+
 type ListRequestAdapter = ServiceFusionAdapter & {
 	request: (config: {
 		method: string;
@@ -1438,17 +1446,25 @@ async function executeEstimate(
 			if (p('estimateSearchSource'))
 				params['filters[source]'] = p('estimateSearchSource') as string;
 			if (p('estimateSearchStartDateFrom'))
-				params['filters[start_date][gte]'] = p('estimateSearchStartDateFrom') as string;
+				params['filters[start_date][gte]'] = formatDateOnly(
+					p('estimateSearchStartDateFrom') as string,
+				);
 			if (p('estimateSearchStartDateTo'))
-				params['filters[start_date][lte]'] = p('estimateSearchStartDateTo') as string;
+				params['filters[start_date][lte]'] = formatDateOnly(
+					p('estimateSearchStartDateTo') as string,
+				);
 			if (p('estimateSearchEndDateFrom'))
-				params['filters[end_date][gte]'] = p('estimateSearchEndDateFrom') as string;
+				params['filters[end_date][gte]'] = formatDateOnly(p('estimateSearchEndDateFrom') as string);
 			if (p('estimateSearchEndDateTo'))
-				params['filters[end_date][lte]'] = p('estimateSearchEndDateTo') as string;
+				params['filters[end_date][lte]'] = formatDateOnly(p('estimateSearchEndDateTo') as string);
 			if (p('estimateSearchRequestedDateFrom'))
-				params['filters[requested_date][gte]'] = p('estimateSearchRequestedDateFrom') as string;
+				params['filters[requested_date][gte]'] = formatDateTime(
+					p('estimateSearchRequestedDateFrom') as string,
+				);
 			if (p('estimateSearchRequestedDateTo'))
-				params['filters[requested_date][lte]'] = p('estimateSearchRequestedDateTo') as string;
+				params['filters[requested_date][lte]'] = formatDateTime(
+					p('estimateSearchRequestedDateTo') as string,
+				);
 			const r = await requestAdapter.request({
 				method: 'GET',
 				url: jobId ? `/jobs/${jobId}/estimates` : '/estimates',
