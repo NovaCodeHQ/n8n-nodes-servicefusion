@@ -19605,7 +19605,7 @@ var require_token_manager = __commonJS({
        */
       async authenticate() {
         try {
-          const response = await this.axios.post("/oauth/token", new URLSearchParams({
+          const response = await this.axios.post("https://api.servicefusion.com/oauth/access_token", new URLSearchParams({
             grant_type: "client_credentials",
             client_id: this.config.clientId,
             client_secret: this.config.clientSecret,
@@ -19630,7 +19630,7 @@ var require_token_manager = __commonJS({
           return this.authenticate();
         }
         try {
-          const response = await this.axios.post("/oauth/token", new URLSearchParams({
+          const response = await this.axios.post("https://api.servicefusion.com/oauth/access_token", new URLSearchParams({
             grant_type: "refresh_token",
             refresh_token: this.token.refreshToken,
             client_id: this.config.clientId,

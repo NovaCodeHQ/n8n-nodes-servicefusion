@@ -27,6 +27,13 @@ await build({
 	legalComments: 'inline',
 });
 
+let bundleText = await readFile(bundlePath, 'utf8');
+bundleText = bundleText.replaceAll(
+	'"/oauth/token"',
+	'"https://api.servicefusion.com/oauth/access_token"',
+);
+await writeFile(bundlePath, bundleText);
+
 const licenseText = await readFile(adapterLicensePath, 'utf8');
 await writeFile(
 	licenseTargetPath,
