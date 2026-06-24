@@ -169,7 +169,7 @@ function formatDateOnly(value: string): string {
 }
 
 function formatDateTime(value: string): string {
-	return new Date(value).toISOString();
+	return new Date(value).toISOString().replace(/\.\d{3}Z$/, '+00:00');
 }
 
 type ListRequestAdapter = ServiceFusionAdapter & {
@@ -892,6 +892,7 @@ function allProperties(): INodeProperties[] {
 		displayName: 'Start Date From',
 		name: 'estimateSearchStartDateFrom',
 		type: 'dateTime',
+		typeOptions: { dateOnly: true },
 		default: '',
 		displayOptions: { show: { resource: [E], operation: ['search'] } },
 	} as INodeProperties);
@@ -899,6 +900,7 @@ function allProperties(): INodeProperties[] {
 		displayName: 'Start Date To',
 		name: 'estimateSearchStartDateTo',
 		type: 'dateTime',
+		typeOptions: { dateOnly: true },
 		default: '',
 		displayOptions: { show: { resource: [E], operation: ['search'] } },
 	} as INodeProperties);
@@ -906,6 +908,7 @@ function allProperties(): INodeProperties[] {
 		displayName: 'End Date From',
 		name: 'estimateSearchEndDateFrom',
 		type: 'dateTime',
+		typeOptions: { dateOnly: true },
 		default: '',
 		displayOptions: { show: { resource: [E], operation: ['search'] } },
 	} as INodeProperties);
@@ -913,6 +916,7 @@ function allProperties(): INodeProperties[] {
 		displayName: 'End Date To',
 		name: 'estimateSearchEndDateTo',
 		type: 'dateTime',
+		typeOptions: { dateOnly: true },
 		default: '',
 		displayOptions: { show: { resource: [E], operation: ['search'] } },
 	} as INodeProperties);
