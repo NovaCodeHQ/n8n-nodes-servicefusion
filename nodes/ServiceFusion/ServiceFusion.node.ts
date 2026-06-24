@@ -12,6 +12,7 @@ import type {
 	JsonObject,
 } from 'n8n-workflow';
 import { NodeConnectionTypes, NodeOperationError, NodeApiError } from 'n8n-workflow';
+import { ApplicationError } from '@n8n/errors';
 
 import { ServiceFusionAdapter } from './vendor/servicefusion-adapter.bundle';
 
@@ -109,6 +110,27 @@ function getApiErrorDetails(error: unknown, adapter: ServiceFusionAdapter | null
 		description: descriptionParts.join('\n\n') || undefined,
 		httpCode: responseStatus !== undefined ? String(responseStatus) : undefined,
 	};
+}
+
+function toItemArray(response: unknown): IDataObject[] {
+	if (Array.isArray(response)) {
+		return response as IDataObject[];
+	}
+
+	if (response && typeof response === 'object') {
+		const data = response as { items?: unknown };
+		if (Array.isArray(data.items)) {
+			return data.items as IDataObject[];
+		}
+	}
+
+	throw new ApplicationError(
+		`Expected list response but received: ${formatDebugValue(response) ?? 'unknown value'}`,
+	);
+}
+
+function mapListResponse(response: unknown): INodeExecutionData[] {
+	return toItemArray(response).map((item) => ({ json: item }));
 }
 
 function allProperties(): INodeProperties[] {
@@ -831,7 +853,7 @@ async function executeCustomer(
 				limit: (p('limit') as number) || undefined,
 				offset: (p('offset') as number) || undefined,
 			});
-			return r.map((x) => ({ json: x as unknown as IDataObject }));
+			return mapListResponse(r);
 		}
 		case 'get': {
 			const r = await adapter.getCustomer(p('customerId') as string);
@@ -884,7 +906,7 @@ async function executeCustomer(
 			if (p('searchZipCode')) f.zipCode = p('searchZipCode');
 			if (p('searchType')) f.type = p('searchType');
 			const r = await adapter.searchCustomers(f);
-			return r.map((x) => ({ json: x as unknown as IDataObject }));
+			return mapListResponse(r);
 		}
 		default:
 			throw new NodeOperationError(ctx.getNode(), `Unknown customer operation: ${operation}`);
@@ -912,7 +934,7 @@ async function executeJob(
 			if (p('limit')) f.limit = p('limit');
 			if (p('offset')) f.offset = p('offset');
 			const r = await adapter.getJobs(f);
-			return r.map((x) => ({ json: x as unknown as IDataObject }));
+			return mapListResponse(r);
 		}
 		case 'get': {
 			const r = await adapter.getJob(p('jobId') as string);
@@ -971,7 +993,7 @@ async function executeJob(
 			if (p('searchExternalId')) f.externalId = p('searchExternalId');
 			if (p('searchDescription')) f.description = p('searchDescription');
 			const r = await adapter.searchJobs(f);
-			return r.map((x) => ({ json: x as unknown as IDataObject }));
+			return mapListResponse(r);
 		}
 		case 'getAllPaged': {
 			const f: Record<string, unknown> & { pageSize?: number } = {};
@@ -985,7 +1007,7 @@ async function executeJob(
 			if (p('scheduledDateTo')) f.scheduledDateTo = new Date(p('scheduledDateTo') as string);
 			if (p('pageSize')) f.pageSize = p('pageSize') as number;
 			const r = await adapter.getAllJobs(f);
-			return r.map((x) => ({ json: x as unknown as IDataObject }));
+			return mapListResponse(r);
 		}
 		case 'batchSync': {
 			const raw = p('jobsJson') as string;
@@ -1017,7 +1039,7 @@ async function executeEstimate(
 	switch (operation) {
 		case 'getAll': {
 			const r = await adapter.getEstimates((p('estimateJobId') as string) || undefined);
-			return r.map((x) => ({ json: x as unknown as IDataObject }));
+			return mapListResponse(r);
 		}
 		case 'get': {
 			const r = await adapter.getEstimate(p('estimateId') as string);
@@ -1064,7 +1086,7 @@ async function executeInvoice(
 			if (p('invoiceDateFrom')) f.dateFrom = new Date(p('invoiceDateFrom') as string);
 			if (p('invoiceDateTo')) f.dateTo = new Date(p('invoiceDateTo') as string);
 			const r = await adapter.getInvoices(f);
-			return r.map((x) => ({ json: x as unknown as IDataObject }));
+			return mapListResponse(r);
 		}
 		case 'get': {
 			const r = await adapter.getInvoice(p('invoiceId') as string);
@@ -1110,7 +1132,7 @@ async function executeTechnician(
 				limit: (p('technicianLimit') as number) || undefined,
 				offset: (p('technicianOffset') as number) || undefined,
 			});
-			return r.map((x) => ({ json: x as unknown as IDataObject }));
+			return mapListResponse(r);
 		}
 		case 'get': {
 			const r = await adapter.getTechnician(p('technicianId') as string);
@@ -1145,7 +1167,7 @@ async function executeWebhook(
 	switch (operation) {
 		case 'getAll': {
 			const r = await adapter.getWebhooks();
-			return r.map((x) => ({ json: x as unknown as IDataObject }));
+			return mapListResponse(r);
 		}
 		case 'create': {
 			const d: Record<string, unknown> = {};
