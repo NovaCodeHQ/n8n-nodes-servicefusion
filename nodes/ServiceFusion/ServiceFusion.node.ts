@@ -35,6 +35,16 @@ type ServiceFusionError = Error & {
 	details?: unknown;
 };
 
+const GENERIC_NETWORK_ERROR_PATTERNS = [
+	'ECONNREFUSED',
+	'ECONNRESET',
+	'ENOTFOUND',
+	'ETIMEDOUT',
+	'EHOSTUNREACH',
+	'EAI_AGAIN',
+	'ERR_NETWORK',
+];
+
 function formatDebugValue(value: unknown): string | undefined {
 	if (value === undefined || value === null) {
 		return undefined;
@@ -63,6 +73,16 @@ function getApiErrorDetails(error: unknown, adapter: ServiceFusionAdapter | null
 	const requestUrl = debugState?.lastRequest?.url;
 	const responseStatus = serviceFusionError.statusCode ?? debugState?.lastResponse?.status;
 	const responseBody = formatDebugValue(serviceFusionError.details ?? debugState?.lastAuthError);
+	const rawMessage = serviceFusionError.message || 'ServiceFusion API request failed';
+	const hasGenericNetworkPattern = GENERIC_NETWORK_ERROR_PATTERNS.some((pattern) =>
+		rawMessage.toUpperCase().includes(pattern),
+	);
+	const message =
+		responseStatus !== undefined
+			? `ServiceFusion API request failed with HTTP ${responseStatus}`
+			: hasGenericNetworkPattern
+				? 'ServiceFusion API connection failed'
+				: rawMessage;
 
 	if (requestMethod || requestUrl) {
 		descriptionParts.push(`Request: ${requestMethod ?? 'GET'} ${requestUrl ?? ''}`.trim());
@@ -80,8 +100,12 @@ function getApiErrorDetails(error: unknown, adapter: ServiceFusionAdapter | null
 		descriptionParts.push(`Response body: ${responseBody}`);
 	}
 
+	if (message !== rawMessage) {
+		descriptionParts.push(`Original error: ${rawMessage}`);
+	}
+
 	return {
-		message: serviceFusionError.message || 'ServiceFusion API request failed',
+		message,
 		description: descriptionParts.join('\n\n') || undefined,
 		httpCode: responseStatus !== undefined ? String(responseStatus) : undefined,
 	};
