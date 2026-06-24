@@ -18,8 +18,34 @@ import { ServiceFusionAdapter } from './vendor/servicefusion-adapter.bundle';
 
 import { createAdapter, disconnectAdapter, getAdapterDebugState } from './GenericFunctions';
 
-const RESOURCES = ['customer', 'job', 'estimate', 'invoice', 'technician', 'webhook'] as const;
+const RESOURCES = [
+	'customer',
+	'job',
+	'estimate',
+	'invoice',
+	'technician',
+	'jobCategory',
+	'jobStatus',
+	'paymentType',
+	'source',
+	'calendarTask',
+	'webhook',
+] as const;
 type Resource = (typeof RESOURCES)[number];
+
+const RESOURCE_LABELS: Record<Resource, string> = {
+	customer: 'Customer',
+	job: 'Job',
+	estimate: 'Estimate',
+	invoice: 'Invoice',
+	technician: 'Technician',
+	jobCategory: 'Job Category',
+	jobStatus: 'Job Status',
+	paymentType: 'Payment Type',
+	source: 'Source',
+	calendarTask: 'Calendar Task',
+	webhook: 'Webhook',
+};
 
 const OPERATIONS: Record<Resource, string[]> = {
 	customer: ['getAll', 'get', 'create', 'update', 'delete', 'search'],
@@ -27,7 +53,12 @@ const OPERATIONS: Record<Resource, string[]> = {
 	estimate: ['getAll', 'get', 'create', 'update', 'convertToJob', 'search'],
 	invoice: ['getAll', 'get', 'create', 'update', 'send'],
 	technician: ['getAll', 'get', 'getSchedule', 'assignJob'],
-	webhook: ['getAll', 'create', 'delete'],
+	jobCategory: ['getAll', 'get'],
+	jobStatus: ['getAll', 'get'],
+	paymentType: ['getAll', 'get'],
+	source: ['getAll', 'get'],
+	calendarTask: ['getAll', 'get'],
+	webhook: ['create', 'delete'],
 };
 
 type ServiceFusionError = Error & {
@@ -133,6 +164,95 @@ function mapListResponse(response: unknown): INodeExecutionData[] {
 	return toItemArray(response).map((item) => ({ json: item }));
 }
 
+type ListRequestAdapter = ServiceFusionAdapter & {
+	request: (config: {
+		method: string;
+		params?: Record<string, number | string>;
+		url: string;
+	}) => Promise<unknown>;
+};
+
+type SimpleListResourceConfig = {
+	endpoint: string;
+	idParam: string;
+	limitParam: string;
+	offsetParam: string;
+};
+
+function addSimpleListResourceProperties(
+	props: INodeProperties[],
+	resource: Resource,
+	idDisplayName: string,
+	idParam: string,
+	limitParam: string,
+	offsetParam: string,
+) {
+	props.push({
+		displayName: 'Limit',
+		name: limitParam,
+		type: 'number',
+		typeOptions: { minValue: 1 },
+		default: 100,
+		description: 'Max number of results to return',
+		displayOptions: { show: { resource: [resource], operation: ['getAll'] } },
+	} as INodeProperties);
+	props.push({
+		displayName: 'Offset',
+		name: offsetParam,
+		type: 'number',
+		default: 0,
+		displayOptions: { show: { resource: [resource], operation: ['getAll'] } },
+	} as INodeProperties);
+	props.push({
+		displayName: idDisplayName,
+		name: idParam,
+		type: 'string',
+		default: '',
+		required: true,
+		displayOptions: { show: { resource: [resource], operation: ['get'] } },
+	} as INodeProperties);
+}
+
+async function executeSimpleListResource(
+	ctx: IExecuteFunctions,
+	adapter: ServiceFusionAdapter,
+	operation: string,
+	itemIndex: number,
+	config: SimpleListResourceConfig,
+): Promise<INodeExecutionData[]> {
+	const p = (n: string, f?: unknown) => ctx.getNodeParameter(n, itemIndex, f);
+	const requestAdapter = adapter as ListRequestAdapter;
+	switch (operation) {
+		case 'getAll': {
+			const limit = p(config.limitParam) as number;
+			const offset = p(config.offsetParam) as number;
+			const params: Record<string, number> = {};
+			if (limit > 0) {
+				params['per-page'] = limit;
+			}
+			if (offset >= 0) {
+				params.page = limit > 0 ? Math.floor(offset / limit) + 1 : offset + 1;
+			}
+			const r = await requestAdapter.request({
+				method: 'GET',
+				url: config.endpoint,
+				params,
+			});
+			return mapListResponse(r);
+		}
+		case 'get': {
+			const id = p(config.idParam) as string;
+			const r = await requestAdapter.request({
+				method: 'GET',
+				url: `${config.endpoint}/${id}`,
+			});
+			return [{ json: r as unknown as IDataObject }];
+		}
+		default:
+			throw new NodeOperationError(ctx.getNode(), `Unknown operation: ${operation}`);
+	}
+}
+
 function allProperties(): INodeProperties[] {
 	const props: INodeProperties[] = [];
 	props.push({
@@ -140,7 +260,7 @@ function allProperties(): INodeProperties[] {
 		name: 'resource',
 		type: 'options',
 		noDataExpression: true,
-		options: RESOURCES.map((r) => ({ name: r.charAt(0).toUpperCase() + r.slice(1), value: r })),
+		options: RESOURCES.map((r) => ({ name: RESOURCE_LABELS[r], value: r })),
 		default: 'customer',
 	});
 	props.push(
@@ -165,6 +285,11 @@ function allProperties(): INodeProperties[] {
 		E = 'estimate',
 		I = 'invoice',
 		T = 'technician',
+		JC = 'jobCategory',
+		JS = 'jobStatus',
+		PT = 'paymentType',
+		S = 'source',
+		CT = 'calendarTask',
 		W = 'webhook';
 	props.push({
 		displayName: 'Customer ID',
@@ -995,6 +1120,39 @@ function allProperties(): INodeProperties[] {
 		required: true,
 		displayOptions: { show: { resource: [W], operation: ['delete'] } },
 	} as INodeProperties);
+	addSimpleListResourceProperties(
+		props,
+		JC,
+		'Job Category ID',
+		'jobCategoryId',
+		'jobCategoryLimit',
+		'jobCategoryOffset',
+	);
+	addSimpleListResourceProperties(
+		props,
+		JS,
+		'Job Status ID',
+		'jobStatusId',
+		'jobStatusLimit',
+		'jobStatusOffset',
+	);
+	addSimpleListResourceProperties(
+		props,
+		PT,
+		'Payment Type ID',
+		'paymentTypeId',
+		'paymentTypeLimit',
+		'paymentTypeOffset',
+	);
+	addSimpleListResourceProperties(props, S, 'Source ID', 'sourceId', 'sourceLimit', 'sourceOffset');
+	addSimpleListResourceProperties(
+		props,
+		CT,
+		'Calendar Task ID',
+		'calendarTaskId',
+		'calendarTaskLimit',
+		'calendarTaskOffset',
+	);
 	return props;
 }
 
@@ -1205,9 +1363,15 @@ async function executeEstimate(
 				}) => Promise<unknown>;
 			};
 			const jobId = (p('estimateJobId') as string) || undefined;
+			const limit = p('estimateLimit') as number;
+			const offset = p('estimateOffset') as number;
 			const params: Record<string, number> = {};
-			if (p('estimateLimit')) params.limit = p('estimateLimit') as number;
-			if (p('estimateOffset')) params.offset = p('estimateOffset') as number;
+			if (limit > 0) {
+				params['per-page'] = limit;
+			}
+			if (offset >= 0) {
+				params.page = limit > 0 ? Math.floor(offset / limit) + 1 : offset + 1;
+			}
 			const r = await requestAdapter.request({
 				method: 'GET',
 				url: jobId ? `/jobs/${jobId}/estimates` : '/estimates',
@@ -1385,6 +1549,76 @@ async function executeTechnician(
 	}
 }
 
+async function executeJobCategory(
+	ctx: IExecuteFunctions,
+	adapter: ServiceFusionAdapter,
+	operation: string,
+	itemIndex: number,
+): Promise<INodeExecutionData[]> {
+	return executeSimpleListResource(ctx, adapter, operation, itemIndex, {
+		endpoint: '/job-categories',
+		idParam: 'jobCategoryId',
+		limitParam: 'jobCategoryLimit',
+		offsetParam: 'jobCategoryOffset',
+	});
+}
+
+async function executeJobStatus(
+	ctx: IExecuteFunctions,
+	adapter: ServiceFusionAdapter,
+	operation: string,
+	itemIndex: number,
+): Promise<INodeExecutionData[]> {
+	return executeSimpleListResource(ctx, adapter, operation, itemIndex, {
+		endpoint: '/job-statuses',
+		idParam: 'jobStatusId',
+		limitParam: 'jobStatusLimit',
+		offsetParam: 'jobStatusOffset',
+	});
+}
+
+async function executePaymentType(
+	ctx: IExecuteFunctions,
+	adapter: ServiceFusionAdapter,
+	operation: string,
+	itemIndex: number,
+): Promise<INodeExecutionData[]> {
+	return executeSimpleListResource(ctx, adapter, operation, itemIndex, {
+		endpoint: '/payment-types',
+		idParam: 'paymentTypeId',
+		limitParam: 'paymentTypeLimit',
+		offsetParam: 'paymentTypeOffset',
+	});
+}
+
+async function executeSource(
+	ctx: IExecuteFunctions,
+	adapter: ServiceFusionAdapter,
+	operation: string,
+	itemIndex: number,
+): Promise<INodeExecutionData[]> {
+	return executeSimpleListResource(ctx, adapter, operation, itemIndex, {
+		endpoint: '/sources',
+		idParam: 'sourceId',
+		limitParam: 'sourceLimit',
+		offsetParam: 'sourceOffset',
+	});
+}
+
+async function executeCalendarTask(
+	ctx: IExecuteFunctions,
+	adapter: ServiceFusionAdapter,
+	operation: string,
+	itemIndex: number,
+): Promise<INodeExecutionData[]> {
+	return executeSimpleListResource(ctx, adapter, operation, itemIndex, {
+		endpoint: '/calendar-tasks',
+		idParam: 'calendarTaskId',
+		limitParam: 'calendarTaskLimit',
+		offsetParam: 'calendarTaskOffset',
+	});
+}
+
 async function executeWebhook(
 	ctx: IExecuteFunctions,
 	adapter: ServiceFusionAdapter,
@@ -1394,8 +1628,10 @@ async function executeWebhook(
 	const p = (n: string, f?: unknown) => ctx.getNodeParameter(n, itemIndex, f);
 	switch (operation) {
 		case 'getAll': {
-			const r = await adapter.getWebhooks();
-			return mapListResponse(r);
+			throw new NodeOperationError(
+				ctx.getNode(),
+				'ServiceFusion does not expose a supported webhook list endpoint for this node. Use Webhook → Create or Delete instead.',
+			);
 		}
 		case 'create': {
 			const d: Record<string, unknown> = {};
@@ -1439,6 +1675,16 @@ async function executeOp(
 			return executeInvoice(ctx, adapter, operation, itemIndex);
 		case 'technician':
 			return executeTechnician(ctx, adapter, operation, itemIndex);
+		case 'jobCategory':
+			return executeJobCategory(ctx, adapter, operation, itemIndex);
+		case 'jobStatus':
+			return executeJobStatus(ctx, adapter, operation, itemIndex);
+		case 'paymentType':
+			return executePaymentType(ctx, adapter, operation, itemIndex);
+		case 'source':
+			return executeSource(ctx, adapter, operation, itemIndex);
+		case 'calendarTask':
+			return executeCalendarTask(ctx, adapter, operation, itemIndex);
 		case 'webhook':
 			return executeWebhook(ctx, adapter, operation, itemIndex);
 		default:
