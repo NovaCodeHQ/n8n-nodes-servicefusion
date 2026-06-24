@@ -9,12 +9,13 @@ import type {
 	INodeCredentialTestResult,
 	ICredentialsDecrypted,
 	ICredentialDataDecryptedObject,
+	JsonObject,
 } from 'n8n-workflow';
 import { NodeConnectionTypes, NodeOperationError, NodeApiError } from 'n8n-workflow';
 
 import { ServiceFusionAdapter } from './vendor/servicefusion-adapter.bundle';
 
-import { createAdapter, disconnectAdapter } from './GenericFunctions';
+import { createAdapter, disconnectAdapter, getAdapterDebugState } from './GenericFunctions';
 
 const RESOURCES = ['customer', 'job', 'estimate', 'invoice', 'technician', 'webhook'] as const;
 type Resource = (typeof RESOURCES)[number];
@@ -27,6 +28,64 @@ const OPERATIONS: Record<Resource, string[]> = {
 	technician: ['getAll', 'get', 'getSchedule', 'assignJob'],
 	webhook: ['getAll', 'create', 'delete'],
 };
+
+type ServiceFusionError = Error & {
+	statusCode?: number;
+	code?: string;
+	details?: unknown;
+};
+
+function formatDebugValue(value: unknown): string | undefined {
+	if (value === undefined || value === null) {
+		return undefined;
+	}
+
+	if (typeof value === 'string') {
+		return value;
+	}
+
+	try {
+		return JSON.stringify(value, null, 2);
+	} catch {
+		return String(value);
+	}
+}
+
+function getApiErrorDetails(error: unknown, adapter: ServiceFusionAdapter | null = null) {
+	if (!(error instanceof Error)) {
+		return null;
+	}
+
+	const serviceFusionError = error as ServiceFusionError;
+	const debugState = getAdapterDebugState(adapter);
+	const descriptionParts: string[] = [];
+	const requestMethod = debugState?.lastRequest?.method?.toUpperCase();
+	const requestUrl = debugState?.lastRequest?.url;
+	const responseStatus = serviceFusionError.statusCode ?? debugState?.lastResponse?.status;
+	const responseBody = formatDebugValue(serviceFusionError.details ?? debugState?.lastAuthError);
+
+	if (requestMethod || requestUrl) {
+		descriptionParts.push(`Request: ${requestMethod ?? 'GET'} ${requestUrl ?? ''}`.trim());
+	}
+
+	if (responseStatus !== undefined) {
+		descriptionParts.push(`HTTP status: ${responseStatus}`);
+	}
+
+	if (serviceFusionError.code) {
+		descriptionParts.push(`ServiceFusion code: ${serviceFusionError.code}`);
+	}
+
+	if (responseBody) {
+		descriptionParts.push(`Response body: ${responseBody}`);
+	}
+
+	return {
+		message: serviceFusionError.message || 'ServiceFusion API request failed',
+		description: descriptionParts.join('\n\n') || undefined,
+		httpCode: responseStatus !== undefined ? String(responseStatus) : undefined,
+	};
+}
 
 function allProperties(): INodeProperties[] {
 	const props: INodeProperties[] = [];
@@ -1144,6 +1203,7 @@ export class ServiceFusion implements INodeType {
 				});
 				try {
 					await adapter.connect();
+					await adapter.getCustomers({ limit: 1 });
 					return { status: 'OK', message: 'Connected successfully' };
 				} catch (error) {
 					return { status: 'Error', message: (error as Error).message };
@@ -1168,13 +1228,52 @@ export class ServiceFusion implements INodeType {
 					const result = await executeOp(this, adapter, resource, operation, itemIndex);
 					returnData.push(...result);
 				} catch (error) {
+					const apiError = getApiErrorDetails(error, adapter);
 					if (this.continueOnFail()) {
-						returnData.push({ json: { error: (error as Error).message }, pairedItem: itemIndex });
+						returnData.push({
+							json: {
+								error: (error as Error).message,
+								...(apiError?.description ? { debug: apiError.description } : {}),
+							},
+							pairedItem: itemIndex,
+						});
 						continue;
+					}
+					if (apiError) {
+						throw new NodeApiError(
+							this.getNode(),
+							{
+								message: apiError.message,
+								description: apiError.description,
+							} as JsonObject,
+							{
+								itemIndex,
+								message: apiError.message,
+								description: apiError.description,
+								httpCode: apiError.httpCode,
+							},
+						);
 					}
 					throw new NodeOperationError(this.getNode(), error as Error, { itemIndex });
 				}
 			}
+		} catch (error) {
+			const apiError = getApiErrorDetails(error, adapter);
+			if (apiError) {
+				throw new NodeApiError(
+					this.getNode(),
+					{
+						message: apiError.message,
+						description: apiError.description,
+					} as JsonObject,
+					{
+						message: apiError.message,
+						description: apiError.description,
+						httpCode: apiError.httpCode,
+					},
+				);
+			}
+			throw new NodeOperationError(this.getNode(), error as Error);
 		} finally {
 			await disconnectAdapter(adapter);
 		}

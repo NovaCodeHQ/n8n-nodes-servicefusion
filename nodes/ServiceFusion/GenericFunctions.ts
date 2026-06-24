@@ -1,6 +1,43 @@
 import type { ICredentialDataDecryptedObject } from 'n8n-workflow';
 import { ServiceFusionAdapter } from './vendor/servicefusion-adapter.bundle';
 
+export interface AdapterDebugState {
+	lastRequest?: {
+		url?: string;
+		method?: string;
+	};
+	lastResponse?: {
+		url?: string;
+		status?: number;
+	};
+	lastAuthError?: unknown;
+}
+
+type DebuggableServiceFusionAdapter = ServiceFusionAdapter & {
+	__n8nDebug?: AdapterDebugState;
+};
+
+function attachAdapterDebug(adapter: DebuggableServiceFusionAdapter) {
+	const debug: AdapterDebugState = {};
+	const eventedAdapter = adapter as DebuggableServiceFusionAdapter & {
+		on: (event: string, listener: (payload: unknown) => void) => void;
+	};
+	adapter.__n8nDebug = debug;
+	eventedAdapter.on('request', (request: unknown) => {
+		debug.lastRequest = request as AdapterDebugState['lastRequest'];
+	});
+	eventedAdapter.on('response', (response: unknown) => {
+		debug.lastResponse = response as AdapterDebugState['lastResponse'];
+	});
+	eventedAdapter.on('auth-error', (error: unknown) => {
+		debug.lastAuthError = error;
+	});
+}
+
+export function getAdapterDebugState(adapter: ServiceFusionAdapter | null | undefined) {
+	return (adapter as DebuggableServiceFusionAdapter | null | undefined)?.__n8nDebug;
+}
+
 /**
  * Create a configured ServiceFusionAdapter from n8n credential data.
  */
@@ -13,6 +50,7 @@ export async function createAdapter(
 		baseUrl: (credentials.baseUrl as string) || 'https://api.servicefusion.com/v1',
 	});
 
+	attachAdapterDebug(adapter as DebuggableServiceFusionAdapter);
 	await adapter.connect();
 	return adapter;
 }
