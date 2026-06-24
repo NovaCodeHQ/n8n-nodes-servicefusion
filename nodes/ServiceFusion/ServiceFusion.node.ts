@@ -640,6 +640,24 @@ function allProperties(): INodeProperties[] {
 		displayOptions: { show: { resource: [E], operation: ['getAll', 'search'] } },
 	} as INodeProperties);
 	props.push({
+		displayName: 'Limit',
+		name: 'estimateLimit',
+		type: 'number',
+		typeOptions: {
+			minValue: 1,
+		},
+		description: 'Max number of results to return',
+		default: 50,
+		displayOptions: { show: { resource: [E], operation: ['getAll'] } },
+	} as INodeProperties);
+	props.push({
+		displayName: 'Offset',
+		name: 'estimateOffset',
+		type: 'number',
+		default: 0,
+		displayOptions: { show: { resource: [E], operation: ['getAll'] } },
+	} as INodeProperties);
+	props.push({
 		displayName: 'Status',
 		name: 'estimateSearchStatus',
 		type: 'string',
@@ -1179,7 +1197,22 @@ async function executeEstimate(
 	const p = (n: string, f?: unknown) => ctx.getNodeParameter(n, itemIndex, f);
 	switch (operation) {
 		case 'getAll': {
-			const r = await adapter.getEstimates((p('estimateJobId') as string) || undefined);
+			const requestAdapter = adapter as ServiceFusionAdapter & {
+				request: (config: {
+					method: string;
+					params?: Record<string, number>;
+					url: string;
+				}) => Promise<unknown>;
+			};
+			const jobId = (p('estimateJobId') as string) || undefined;
+			const params: Record<string, number> = {};
+			if (p('estimateLimit')) params.limit = p('estimateLimit') as number;
+			if (p('estimateOffset')) params.offset = p('estimateOffset') as number;
+			const r = await requestAdapter.request({
+				method: 'GET',
+				url: jobId ? `/jobs/${jobId}/estimates` : '/estimates',
+				params,
+			});
 			return mapListResponse(r);
 		}
 		case 'get': {
