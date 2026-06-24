@@ -5,6 +5,10 @@ import type {
 	INodeType,
 	INodeTypeDescription,
 	IDataObject,
+	ICredentialTestFunctions,
+	INodeCredentialTestResult,
+	ICredentialsDecrypted,
+	ICredentialDataDecryptedObject,
 } from 'n8n-workflow';
 import { NodeConnectionTypes, NodeOperationError, NodeApiError } from 'n8n-workflow';
 
@@ -1124,6 +1128,30 @@ export class ServiceFusion implements INodeType {
 		usableAsTool: true,
 		credentials: [{ name: 'serviceFusionApi', required: true, testedBy: 'serviceFusionApi' }],
 		properties: allProperties(),
+	};
+
+	methods = {
+		credentialTest: {
+			async serviceFusionApi(
+				this: ICredentialTestFunctions,
+				credential: ICredentialsDecrypted<ICredentialDataDecryptedObject>,
+			): Promise<INodeCredentialTestResult> {
+				const { clientId, clientSecret, baseUrl } = credential.data ?? {};
+				const adapter = new ServiceFusionAdapter({
+					clientId: clientId as string,
+					clientSecret: clientSecret as string,
+					baseUrl: (baseUrl as string) || 'https://api.servicefusion.com/v1',
+				});
+				try {
+					await adapter.connect();
+					return { status: 'OK', message: 'Connected successfully' };
+				} catch (error) {
+					return { status: 'Error', message: (error as Error).message };
+				} finally {
+					await disconnectAdapter(adapter);
+				}
+			},
+		},
 	};
 
 	async execute(this: IExecuteFunctions): Promise<INodeExecutionData[][]> {
