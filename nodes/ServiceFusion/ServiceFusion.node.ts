@@ -172,7 +172,7 @@ function formatDateTime(value: string): string {
 type ListRequestAdapter = ServiceFusionAdapter & {
 	request: (config: {
 		method: string;
-		params?: Record<string, number | string>;
+		params?: Record<string, unknown>;
 		url: string;
 	}) => Promise<unknown>;
 };
@@ -320,6 +320,21 @@ function allProperties(): INodeProperties[] {
 		type: 'number',
 		default: 0,
 		displayOptions: { show: { resource: [C], operation: ['getAll'] } },
+	} as INodeProperties);
+	props.push({
+		displayName: 'Expand',
+		name: 'customerExpand',
+		type: 'multiOptions',
+		default: [],
+		options: [
+			{ name: 'Contacts', value: 'contacts' },
+			{ name: 'Contacts.Emails', value: 'contacts.emails' },
+			{ name: 'Contacts.Phones', value: 'contacts.phones' },
+			{ name: 'Custom Fields', value: 'custom_fields' },
+			{ name: 'Locations', value: 'locations' },
+		],
+		description: 'Additional data to include in the response',
+		displayOptions: { show: { resource: [C], operation: ['getAll', 'get', 'search'] } },
 	} as INodeProperties);
 	props.push({
 		displayName: 'Customer Name',
@@ -1137,17 +1152,37 @@ async function executeCustomer(
 	itemIndex: number,
 ): Promise<INodeExecutionData[]> {
 	const p = (n: string, f?: unknown) => ctx.getNodeParameter(n, itemIndex, f);
+	const requestAdapter = adapter as ListRequestAdapter;
 	switch (operation) {
 		case 'getAll': {
-			const r = await adapter.getCustomers({
+			const params: Record<string, unknown> = {
 				limit: (p('limit') as number) || undefined,
 				offset: (p('offset') as number) || undefined,
-				sortBy: 'customer_name',
+				sort: 'customer_name',
+				order: 'asc',
+			};
+			const expand = p('customerExpand');
+			if (Array.isArray(expand) && expand.length) {
+				params.expand = (expand as string[]).join(',');
+			}
+			const r = await requestAdapter.request({
+				method: 'GET',
+				url: '/customers',
+				params,
 			});
 			return mapListResponse(r);
 		}
 		case 'get': {
-			const r = await adapter.getCustomer(p('customerId') as string);
+			const params: Record<string, unknown> = {};
+			const expand = p('customerExpand');
+			if (Array.isArray(expand) && expand.length) {
+				params.expand = (expand as string[]).join(',');
+			}
+			const r = await requestAdapter.request({
+				method: 'GET',
+				url: `/customers/${p('customerId') as string}`,
+				params,
+			});
 			return [{ json: r as unknown as IDataObject }];
 		}
 		case 'create': {
@@ -1188,15 +1223,23 @@ async function executeCustomer(
 			return [{ json: { success: true, customerId: id } }];
 		}
 		case 'search': {
-			const f: Record<string, unknown> = {};
-			if (p('searchName')) f.name = p('searchName');
-			if (p('searchEmail')) f.email = p('searchEmail');
-			if (p('searchPhone')) f.phone = p('searchPhone');
-			if (p('searchCity')) f.city = p('searchCity');
-			if (p('searchState')) f.state = p('searchState');
-			if (p('searchZipCode')) f.zipCode = p('searchZipCode');
-			if (p('searchType')) f.type = p('searchType');
-			const r = await adapter.searchCustomers(f);
+			const params: Record<string, unknown> = {};
+			if (p('searchName')) params.name = p('searchName');
+			if (p('searchEmail')) params.email = p('searchEmail');
+			if (p('searchPhone')) params.phone = p('searchPhone');
+			if (p('searchCity')) params.city = p('searchCity');
+			if (p('searchState')) params.state = p('searchState');
+			if (p('searchZipCode')) params.zipCode = p('searchZipCode');
+			if (p('searchType')) params.type = p('searchType');
+			const expand = p('customerExpand');
+			if (Array.isArray(expand) && expand.length) {
+				params.expand = (expand as string[]).join(',');
+			}
+			const r = await requestAdapter.request({
+				method: 'GET',
+				url: '/customers/search',
+				params,
+			});
 			return mapListResponse(r);
 		}
 		default:
