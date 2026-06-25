@@ -1,6 +1,6 @@
 {
 	"name": "@novacodehq/n8n-nodes-servicefusion",
-	"version": "1.0.3",
+	"version": "1.0.4",
 	"description": "ServiceFusion field service management integration for n8n",
 	"license": "MIT",
 	"homepage": "https://github.com/NovaCodeHQ/n8n-nodes-servicefusion",
