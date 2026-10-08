@@ -71,7 +71,7 @@ Create a **ServiceFusion API** credential in n8n with:
 
 The node uses the adapter's OAuth2 flow internally and validates credentials on first execution via a lightweight test call.
 
-## Compatibility
+## Compatibility 
 
 | Requirement    | Notes                                                 |
 | -------------- | ----------------------------------------------------- |
