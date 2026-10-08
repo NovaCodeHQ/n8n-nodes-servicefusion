@@ -3,3 +3,4 @@ node_modules
 .agents
 .vscode
 .tmp
+.pi-memory

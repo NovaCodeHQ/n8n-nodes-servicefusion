@@ -177,6 +177,37 @@ type ListRequestAdapter = ServiceFusionAdapter & {
 	}) => Promise<unknown>;
 };
 
+async function withJobExpand<T>(
+	adapter: ServiceFusionAdapter,
+	expand: unknown,
+	execute: () => Promise<T>,
+): Promise<T> {
+	if (!Array.isArray(expand) || expand.length === 0) {
+		return execute();
+	}
+
+	const requestAdapter = adapter as ListRequestAdapter;
+	const originalRequest = requestAdapter.request;
+	const expandValue = (expand as string[]).join(',');
+	requestAdapter.request = (config) => {
+		const supportsExpand =
+			config.method === 'GET' && (config.url === '/jobs' || /^\/jobs\/[^/]+$/.test(config.url));
+		if (!supportsExpand) {
+			return originalRequest.call(adapter, config);
+		}
+		return originalRequest.call(adapter, {
+			...config,
+			params: { ...config.params, expand: expandValue },
+		});
+	};
+
+	try {
+		return await execute();
+	} finally {
+		requestAdapter.request = originalRequest;
+	}
+}
+
 type SimpleListResourceConfig = {
 	endpoint: string;
 	idParam: string;
@@ -505,6 +536,37 @@ function allProperties(): INodeProperties[] {
 		default: '',
 		required: true,
 		displayOptions: { show: { resource: [J], operation: ['get'] } },
+	} as INodeProperties);
+	props.push({
+		displayName: 'Expand',
+		name: 'jobExpand',
+		type: 'multiOptions',
+		default: [],
+		options: [
+			{ name: 'Agents', value: 'agents' },
+			{ name: 'Custom Fields', value: 'custom_fields' },
+			{ name: 'Documents', value: 'documents' },
+			{ name: 'Equipment', value: 'equipment' },
+			{ name: 'Equipment.Custom Fields', value: 'equipment.custom_fields' },
+			{ name: 'Expenses', value: 'expenses' },
+			{ name: 'Invoices', value: 'invoices' },
+			{ name: 'Labor Charges', value: 'labor_charges' },
+			{ name: 'Notes', value: 'notes' },
+			{ name: 'Other Charges', value: 'other_charges' },
+			{ name: 'Payments', value: 'payments' },
+			{ name: 'Pictures', value: 'pictures' },
+			{ name: 'Printable Work Order', value: 'printable_work_order' },
+			{ name: 'Products', value: 'products' },
+			{ name: 'Services', value: 'services' },
+			{ name: 'Signatures', value: 'signatures' },
+			{ name: 'Tags', value: 'tags' },
+			{ name: 'Tasks', value: 'tasks' },
+			{ name: 'Technicians Assigned', value: 'techs_assigned' },
+			{ name: 'Visits', value: 'visits' },
+			{ name: 'Visits.Technicians Assigned', value: 'visits.techs_assigned' },
+		],
+		description: 'Additional data to include in the response',
+		displayOptions: { show: { resource: [J], operation: ['get', 'getAll', 'getAllPaged'] } },
 	} as INodeProperties);
 	props.push({
 		displayName: 'Customer ID',
@@ -900,6 +962,32 @@ function allProperties(): INodeProperties[] {
 		displayOptions: { show: { resource: [E], operation: ['search'] } },
 	} as INodeProperties);
 	props.push({
+		displayName: 'Expand',
+		name: 'estimateSearchExpand',
+		type: 'multiOptions',
+		default: [],
+		options: [
+			{ name: 'Agents', value: 'agents' },
+			{ name: 'Custom Fields', value: 'custom_fields' },
+			{ name: 'Documents', value: 'documents' },
+			{ name: 'Equipment', value: 'equipment' },
+			{ name: 'Equipment.Custom Fields', value: 'equipment.custom_fields' },
+			{ name: 'Notes', value: 'notes' },
+			{ name: 'Other Charges', value: 'other_charges' },
+			{ name: 'Payments', value: 'payments' },
+			{ name: 'Pictures', value: 'pictures' },
+			{ name: 'Printable Work Order', value: 'printable_work_order' },
+			{ name: 'Products', value: 'products' },
+			{ name: 'Services', value: 'services' },
+			{ name: 'Signatures', value: 'signatures' },
+			{ name: 'Tags', value: 'tags' },
+			{ name: 'Tasks', value: 'tasks' },
+			{ name: 'Technicians Assigned', value: 'techs_assigned' },
+		],
+		description: 'Additional data to include in the response',
+		displayOptions: { show: { resource: [E], operation: ['getAll', 'get', 'search'] } },
+	} as INodeProperties);
+	props.push({
 		displayName: 'Start Date From',
 		name: 'estimateSearchStartDateFrom',
 		type: 'dateTime',
@@ -1267,11 +1355,13 @@ async function executeJob(
 			if (p('scheduledDateTo')) f.scheduledDateTo = new Date(p('scheduledDateTo') as string);
 			if (p('limit')) f.limit = p('limit');
 			if (p('offset')) f.offset = p('offset');
-			const r = await adapter.getJobs(f);
+			const r = await withJobExpand(adapter, p('jobExpand'), () => adapter.getJobs(f));
 			return mapListResponse(r);
 		}
 		case 'get': {
-			const r = await adapter.getJob(p('jobId') as string);
+			const r = await withJobExpand(adapter, p('jobExpand'), () =>
+				adapter.getJob(p('jobId') as string),
+			);
 			return [{ json: r as unknown as IDataObject }];
 		}
 		case 'create': {
@@ -1340,7 +1430,7 @@ async function executeJob(
 			if (p('scheduledDateFrom')) f.scheduledDateFrom = new Date(p('scheduledDateFrom') as string);
 			if (p('scheduledDateTo')) f.scheduledDateTo = new Date(p('scheduledDateTo') as string);
 			if (p('pageSize')) f.pageSize = p('pageSize') as number;
-			const r = await adapter.getAllJobs(f);
+			const r = await withJobExpand(adapter, p('jobExpand'), () => adapter.getAllJobs(f));
 			return mapListResponse(r);
 		}
 		case 'batchSync': {
@@ -1375,19 +1465,23 @@ async function executeEstimate(
 			const requestAdapter = adapter as ServiceFusionAdapter & {
 				request: (config: {
 					method: string;
-					params?: Record<string, number>;
+					params?: Record<string, number | string>;
 					url: string;
 				}) => Promise<unknown>;
 			};
 			const jobId = (p('estimateJobId') as string) || undefined;
 			const limit = p('estimateLimit') as number;
 			const offset = p('estimateOffset') as number;
-			const params: Record<string, number> = {};
+			const params: Record<string, number | string> = {};
 			if (limit > 0) {
 				params['per-page'] = limit;
 			}
 			if (offset >= 0) {
 				params.page = limit > 0 ? Math.floor(offset / limit) + 1 : offset + 1;
+			}
+			const expand = p('estimateSearchExpand');
+			if (Array.isArray(expand) && expand.length) {
+				params.expand = (expand as string[]).join(',');
 			}
 			const r = await requestAdapter.request({
 				method: 'GET',
@@ -1397,7 +1491,17 @@ async function executeEstimate(
 			return mapListResponse(r);
 		}
 		case 'get': {
-			const r = await adapter.getEstimate(p('estimateId') as string);
+			const params: Record<string, unknown> = {};
+			const expand = p('estimateSearchExpand');
+			if (Array.isArray(expand) && expand.length) {
+				params.expand = (expand as string[]).join(',');
+			}
+			const requestAdapter = adapter as ListRequestAdapter;
+			const r = await requestAdapter.request({
+				method: 'GET',
+				url: `/estimates/${p('estimateId') as string}`,
+				params,
+			});
 			return [{ json: r as unknown as IDataObject }];
 		}
 		case 'create': {
@@ -1454,6 +1558,10 @@ async function executeEstimate(
 				params['filters[category]'] = p('estimateSearchCategory') as string;
 			if (p('estimateSearchSource'))
 				params['filters[source]'] = p('estimateSearchSource') as string;
+			const expand = p('estimateSearchExpand');
+			if (Array.isArray(expand) && expand.length) {
+				params.expand = (expand as string[]).join(',');
+			}
 			if (p('estimateSearchStartDateFrom'))
 				params['filters[start_date][gte]'] = formatDateOnly(
 					p('estimateSearchStartDateFrom') as string,

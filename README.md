@@ -100,12 +100,8 @@ The node respects n8n's `continueOnFail` — errors on individual items produce 
 ## Resources
 
 - [n8n community nodes documentation](https://docs.n8n.io/integrations/#community-nodes)
-- [ServiceFusion API documentation](https://developer.servicefusion.com)
+- [ServiceFusion API documentation](https://docs.servicefusion.com/)
 - [ServiceFusion adapter repository](https://github.com/rashidazarang/servicefusion-adapter)
-
-## Version history
-
-See [CHANGELOG.md](CHANGELOG.md).
 
 ## License
 
