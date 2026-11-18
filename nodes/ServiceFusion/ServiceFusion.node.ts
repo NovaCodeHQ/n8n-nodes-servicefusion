@@ -1391,26 +1391,26 @@ async function executeCustomer(
 			// Removed searchState/searchType inputs are not supported by GET /customers filters.
 			// Fail loudly for saved workflows that still carry values instead of
 			// silently returning an unfiltered customer list.
-			if (p('searchState'))
+			if (p('searchState', ''))
 				throw new NodeOperationError(
 					ctx.getNode(),
 					'Customer Search no longer supports "State": the ServiceFusion GET /customers API exposes no matching filter. Use City or Zip Code instead.',
 				);
-			if (p('searchType'))
+			if (p('searchType', ''))
 				throw new NodeOperationError(
 					ctx.getNode(),
 					'Customer Search no longer supports "Type": the ServiceFusion GET /customers API exposes no matching filter. Remove it from this step.',
 				);
 			const params: Record<string, unknown> = { 'per-page': 50 };
-			if (p('searchName')) params['filters[name]'] = p('searchName');
-			if (p('searchContactFirstName'))
+			if (p('searchName', '')) params['filters[name]'] = p('searchName');
+			if (p('searchContactFirstName', ''))
 				params['filters[contact_first_name]'] = p('searchContactFirstName');
-			if (p('searchContactLastName'))
+			if (p('searchContactLastName', ''))
 				params['filters[contact_last_name]'] = p('searchContactLastName');
-			if (p('searchEmail')) params['filters[email]'] = p('searchEmail');
-			if (p('searchPhone')) params['filters[phone]'] = p('searchPhone');
-			if (p('searchCity')) params['filters[city]'] = p('searchCity');
-			if (p('searchZipCode')) params['filters[postal_code]'] = p('searchZipCode');
+			if (p('searchEmail', '')) params['filters[email]'] = p('searchEmail');
+			if (p('searchPhone', '')) params['filters[phone]'] = p('searchPhone');
+			if (p('searchCity', '')) params['filters[city]'] = p('searchCity');
+			if (p('searchZipCode', '')) params['filters[postal_code]'] = p('searchZipCode');
 			// Never send an unfiltered Search: without a supported filter this would
 			// return unrelated records. Direct users to Get All for full lists.
 			if (!Object.keys(params).some((k) => k.startsWith('filters[')))
@@ -1418,7 +1418,7 @@ async function executeCustomer(
 					ctx.getNode(),
 					'Customer Search needs at least one filter (Name, Contact First/Last Name, Email, Phone, City, or Zip Code). For an unfiltered customer list, use "Get All" instead.',
 				);
-			const expand = p('customerExpand');
+			const expand = p('customerExpand', []);
 			if (Array.isArray(expand) && expand.length) {
 				params.expand = (expand as string[]).join(',');
 			}
@@ -1507,12 +1507,12 @@ async function executeJob(
 			// Removed searchExternalId/searchDescription inputs are not supported by
 			// GET /jobs filters. Fail loudly for saved workflows instead of silently
 			// returning an unfiltered job list.
-			if (p('searchExternalId'))
+			if (p('searchExternalId', ''))
 				throw new NodeOperationError(
 					ctx.getNode(),
 					'Job Search no longer supports "External ID": the ServiceFusion GET /jobs API exposes no matching filter. Remove it from this step.',
 				);
-			if (p('searchDescription'))
+			if (p('searchDescription', ''))
 				throw new NodeOperationError(
 					ctx.getNode(),
 					'Job Search no longer supports "Description": the ServiceFusion GET /jobs API exposes no matching filter. Remove it from this step.',
@@ -1520,44 +1520,45 @@ async function executeJob(
 			// These inputs are Get All / Get All Paged only; GET /jobs exposes no
 			// matching search filter. Saved Search steps still carrying values fail
 			// loudly instead of sending a request that silently ignores them.
-			if (p('jobCustomerId'))
+			if (p('jobCustomerId', ''))
 				throw new NodeOperationError(
 					ctx.getNode(),
 					'Job Search no longer supports "Customer ID": filter by "Customer Name" instead, or use "Get All" for an unfiltered list.',
 				);
-			const legacyPriority = p('jobPriority');
+			const legacyPriority = p('jobPriority', []);
 			if (Array.isArray(legacyPriority) && legacyPriority.length)
 				throw new NodeOperationError(
 					ctx.getNode(),
 					'Job Search no longer supports "Priority": the ServiceFusion GET /jobs API exposes no matching filter. Remove it from this step.',
 				);
-			if (p('jobTechnicianId'))
+			if (p('jobTechnicianId', ''))
 				throw new NodeOperationError(
 					ctx.getNode(),
 					'Job Search no longer supports "Technician ID": the ServiceFusion GET /jobs API exposes no matching filter. Remove it from this step.',
 				);
-			if (p('scheduledDateFrom') || p('scheduledDateTo'))
+			if (p('scheduledDateFrom', '') || p('scheduledDateTo', ''))
 				throw new NodeOperationError(
 					ctx.getNode(),
 					'Job Search no longer supports "Scheduled Date": the ServiceFusion GET /jobs API exposes no matching search filter. Remove it from this step.',
 				);
 			const requestAdapter = adapter as ListRequestAdapter;
 			const params: Record<string, unknown> = { 'per-page': 50 };
-			const js = p('jobStatus');
+			const js = p('jobStatus', []);
 			if (Array.isArray(js) && js.length) params['filters[status]'] = (js as string[]).join(',');
-			if (p('jobSearchNumber')) params['filters[number]'] = p('jobSearchNumber');
-			if (p('jobSearchCustomerName')) params['filters[customer_name]'] = p('jobSearchCustomerName');
-			if (p('jobSearchContactFirstName'))
+			if (p('jobSearchNumber', '')) params['filters[number]'] = p('jobSearchNumber');
+			if (p('jobSearchCustomerName', ''))
+				params['filters[customer_name]'] = p('jobSearchCustomerName');
+			if (p('jobSearchContactFirstName', ''))
 				params['filters[contact_first_name]'] = p('jobSearchContactFirstName');
-			if (p('jobSearchContactLastName'))
+			if (p('jobSearchContactLastName', ''))
 				params['filters[contact_last_name]'] = p('jobSearchContactLastName');
-			if (p('jobSearchEmail')) params['filters[email]'] = p('jobSearchEmail');
-			if (p('jobSearchPhone')) params['filters[phone]'] = p('jobSearchPhone');
-			if (p('jobSearchAddress')) params['filters[address]'] = p('jobSearchAddress');
-			if (p('jobSearchCity')) params['filters[city]'] = p('jobSearchCity');
-			if (p('jobSearchZipCode')) params['filters[zip_code]'] = p('jobSearchZipCode');
-			if (p('jobSearchCategory')) params['filters[category]'] = p('jobSearchCategory');
-			if (p('jobSearchSource')) params['filters[source]'] = p('jobSearchSource');
+			if (p('jobSearchEmail', '')) params['filters[email]'] = p('jobSearchEmail');
+			if (p('jobSearchPhone', '')) params['filters[phone]'] = p('jobSearchPhone');
+			if (p('jobSearchAddress', '')) params['filters[address]'] = p('jobSearchAddress');
+			if (p('jobSearchCity', '')) params['filters[city]'] = p('jobSearchCity');
+			if (p('jobSearchZipCode', '')) params['filters[zip_code]'] = p('jobSearchZipCode');
+			if (p('jobSearchCategory', '')) params['filters[category]'] = p('jobSearchCategory');
+			if (p('jobSearchSource', '')) params['filters[source]'] = p('jobSearchSource');
 			// Never send an unfiltered Search: without a supported filter this would
 			// return unrelated records. Direct users to Get All for full lists.
 			if (!Object.keys(params).some((k) => k.startsWith('filters[')))
@@ -1684,54 +1685,56 @@ async function executeEstimate(
 					url: string;
 				}) => Promise<unknown>;
 			};
-			const jobId = p('estimateJobId') as string;
+			const jobId = p('estimateJobId', '') as string;
 			const params: Record<string, string> = {};
-			if (p('estimateSearchStatus'))
+			if (p('estimateSearchStatus', ''))
 				params['filters[status]'] = p('estimateSearchStatus') as string;
-			if (p('estimateSearchNumber'))
+			if (p('estimateSearchNumber', ''))
 				params['filters[number]'] = p('estimateSearchNumber') as string;
-			if (p('estimateSearchPoNumber'))
+			if (p('estimateSearchPoNumber', ''))
 				params['filters[po_number]'] = p('estimateSearchPoNumber') as string;
-			if (p('estimateSearchCustomerName'))
+			if (p('estimateSearchCustomerName', ''))
 				params['filters[customer_name]'] = p('estimateSearchCustomerName') as string;
-			if (p('estimateSearchParentCustomerName'))
+			if (p('estimateSearchParentCustomerName', ''))
 				params['filters[parent_customer_name]'] = p('estimateSearchParentCustomerName') as string;
-			if (p('estimateSearchContactFirstName'))
+			if (p('estimateSearchContactFirstName', ''))
 				params['filters[contact_first_name]'] = p('estimateSearchContactFirstName') as string;
-			if (p('estimateSearchContactLastName'))
+			if (p('estimateSearchContactLastName', ''))
 				params['filters[contact_last_name]'] = p('estimateSearchContactLastName') as string;
-			if (p('estimateSearchAddress'))
+			if (p('estimateSearchAddress', ''))
 				params['filters[address]'] = p('estimateSearchAddress') as string;
-			if (p('estimateSearchCity')) params['filters[city]'] = p('estimateSearchCity') as string;
-			if (p('estimateSearchZipCode'))
+			if (p('estimateSearchCity', '')) params['filters[city]'] = p('estimateSearchCity') as string;
+			if (p('estimateSearchZipCode', ''))
 				params['filters[zip_code]'] = p('estimateSearchZipCode') as string;
-			if (p('estimateSearchPhone')) params['filters[phone]'] = p('estimateSearchPhone') as string;
-			if (p('estimateSearchEmail')) params['filters[email]'] = p('estimateSearchEmail') as string;
-			if (p('estimateSearchCategory'))
+			if (p('estimateSearchPhone', ''))
+				params['filters[phone]'] = p('estimateSearchPhone') as string;
+			if (p('estimateSearchEmail', ''))
+				params['filters[email]'] = p('estimateSearchEmail') as string;
+			if (p('estimateSearchCategory', ''))
 				params['filters[category]'] = p('estimateSearchCategory') as string;
-			if (p('estimateSearchSource'))
+			if (p('estimateSearchSource', ''))
 				params['filters[source]'] = p('estimateSearchSource') as string;
-			const expand = p('estimateSearchExpand');
+			const expand = p('estimateSearchExpand', []);
 			if (Array.isArray(expand) && expand.length) {
 				params.expand = (expand as string[]).join(',');
 			}
-			if (p('estimateSearchStartDateFrom'))
+			if (p('estimateSearchStartDateFrom', ''))
 				params['filters[start_date][gte]'] = formatDateOnly(
 					p('estimateSearchStartDateFrom') as string,
 				);
-			if (p('estimateSearchStartDateTo'))
+			if (p('estimateSearchStartDateTo', ''))
 				params['filters[start_date][lte]'] = formatDateOnly(
 					p('estimateSearchStartDateTo') as string,
 				);
-			if (p('estimateSearchEndDateFrom'))
+			if (p('estimateSearchEndDateFrom', ''))
 				params['filters[end_date][gte]'] = formatDateOnly(p('estimateSearchEndDateFrom') as string);
-			if (p('estimateSearchEndDateTo'))
+			if (p('estimateSearchEndDateTo', ''))
 				params['filters[end_date][lte]'] = formatDateOnly(p('estimateSearchEndDateTo') as string);
-			if (p('estimateSearchRequestedDateFrom'))
+			if (p('estimateSearchRequestedDateFrom', ''))
 				params['filters[requested_date][gte]'] = formatDateTime(
 					p('estimateSearchRequestedDateFrom') as string,
 				);
-			if (p('estimateSearchRequestedDateTo'))
+			if (p('estimateSearchRequestedDateTo', ''))
 				params['filters[requested_date][lte]'] = formatDateTime(
 					p('estimateSearchRequestedDateTo') as string,
 				);
