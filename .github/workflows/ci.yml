@@ -21,7 +21,9 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 'lts/*'
+          # Pinned to Node 22: isolated-vm (via @n8n/node-cli)
+          # does not compile on newer Node (V8 API breakage).
+          node-version: '22'
           cache: 'npm'
 
       - name: Install dependencies
