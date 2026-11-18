@@ -37,6 +37,7 @@ This package is intended for **self-hosted n8n** only. It is not configured for 
 - **Customer** supports expand parameters for contacts, custom fields, and locations.
 - **Job** includes `Get All Paged` (cursor-based pagination) and `Batch Sync` (upsert via external ID, customer ID, or description).
 - **Estimate** offers extensive search filters across status, dates, customer details, PO number, and more.
+- **Search** (Customer, Job, Estimate) queries the list endpoint with the API's documented `filters[...]` (phone is partial match, email is full match) and returns up to 50 results per call. Search requires at least one filter — use Get All for unfiltered lists. For larger Job sets, use `Get All Paged`.
 - **Invoice** supports status filtering, date range queries, and email delivery via `Send`.
 - **Technician** covers schedule lookup and job assignment.
 - **Job Category**, **Job Status**, **Payment Type**, **Source**, and **Calendar Task** are read-only list/lookup resources.
@@ -71,7 +72,7 @@ Create a **ServiceFusion API** credential in n8n with:
 
 The node uses the adapter's OAuth2 flow internally and validates credentials on first execution via a lightweight test call.
 
-## Compatibility 
+## Compatibility
 
 | Requirement    | Notes                                                 |
 | -------------- | ----------------------------------------------------- |

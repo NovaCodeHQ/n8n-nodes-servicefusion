@@ -480,6 +480,23 @@ function allProperties(): INodeProperties[] {
 		name: 'searchName',
 		type: 'string',
 		default: '',
+		description: 'Partial match on customer name (maps to filters[name])',
+		displayOptions: { show: { resource: [C], operation: ['search'] } },
+	} as INodeProperties);
+	props.push({
+		displayName: 'Contact First Name',
+		name: 'searchContactFirstName',
+		type: 'string',
+		default: '',
+		description: 'Partial match on contact first name (maps to filters[contact_first_name])',
+		displayOptions: { show: { resource: [C], operation: ['search'] } },
+	} as INodeProperties);
+	props.push({
+		displayName: 'Contact Last Name',
+		name: 'searchContactLastName',
+		type: 'string',
+		default: '',
+		description: 'Partial match on contact last name (maps to filters[contact_last_name])',
 		displayOptions: { show: { resource: [C], operation: ['search'] } },
 	} as INodeProperties);
 	props.push({
@@ -487,6 +504,7 @@ function allProperties(): INodeProperties[] {
 		name: 'searchEmail',
 		type: 'string',
 		default: '',
+		description: 'Full match on contact/customer email (maps to filters[email])',
 		displayOptions: { show: { resource: [C], operation: ['search'] } },
 	} as INodeProperties);
 	props.push({
@@ -494,6 +512,8 @@ function allProperties(): INodeProperties[] {
 		name: 'searchPhone',
 		type: 'string',
 		default: '',
+		description: 'Partial match on contact/customer phone (maps to filters[phone])',
+		placeholder: '214-555-1212',
 		displayOptions: { show: { resource: [C], operation: ['search'] } },
 	} as INodeProperties);
 	props.push({
@@ -504,29 +524,11 @@ function allProperties(): INodeProperties[] {
 		displayOptions: { show: { resource: [C], operation: ['search'] } },
 	} as INodeProperties);
 	props.push({
-		displayName: 'State',
-		name: 'searchState',
-		type: 'string',
-		default: '',
-		displayOptions: { show: { resource: [C], operation: ['search'] } },
-	} as INodeProperties);
-	props.push({
 		displayName: 'Zip Code',
 		name: 'searchZipCode',
 		type: 'string',
 		default: '',
-		displayOptions: { show: { resource: [C], operation: ['search'] } },
-	} as INodeProperties);
-	props.push({
-		displayName: 'Type',
-		name: 'searchType',
-		type: 'options',
-		default: '',
-		options: [
-			{ name: 'All', value: '' },
-			{ name: 'Residential', value: 'Residential' },
-			{ name: 'Commercial', value: 'Commercial' },
-		],
+		description: 'Full match on postal code (maps to filters[postal_code])',
 		displayOptions: { show: { resource: [C], operation: ['search'] } },
 	} as INodeProperties);
 	props.push({
@@ -573,7 +575,7 @@ function allProperties(): INodeProperties[] {
 		name: 'jobCustomerId',
 		type: 'string',
 		default: '',
-		displayOptions: { show: { resource: [J], operation: ['getAll', 'search', 'getAllPaged'] } },
+		displayOptions: { show: { resource: [J], operation: ['getAll', 'getAllPaged'] } },
 	} as INodeProperties);
 	props.push({
 		displayName: 'Status',
@@ -601,28 +603,28 @@ function allProperties(): INodeProperties[] {
 			{ name: 'High', value: 'High' },
 			{ name: 'Emergency', value: 'Emergency' },
 		],
-		displayOptions: { show: { resource: [J], operation: ['getAll', 'search', 'getAllPaged'] } },
+		displayOptions: { show: { resource: [J], operation: ['getAll', 'getAllPaged'] } },
 	} as INodeProperties);
 	props.push({
 		displayName: 'Technician ID',
 		name: 'jobTechnicianId',
 		type: 'string',
 		default: '',
-		displayOptions: { show: { resource: [J], operation: ['getAll', 'search', 'getAllPaged'] } },
+		displayOptions: { show: { resource: [J], operation: ['getAll', 'getAllPaged'] } },
 	} as INodeProperties);
 	props.push({
 		displayName: 'Scheduled Date From',
 		name: 'scheduledDateFrom',
 		type: 'dateTime',
 		default: '',
-		displayOptions: { show: { resource: [J], operation: ['getAll', 'search', 'getAllPaged'] } },
+		displayOptions: { show: { resource: [J], operation: ['getAll', 'getAllPaged'] } },
 	} as INodeProperties);
 	props.push({
 		displayName: 'Scheduled Date To',
 		name: 'scheduledDateTo',
 		type: 'dateTime',
 		default: '',
-		displayOptions: { show: { resource: [J], operation: ['getAll', 'search', 'getAllPaged'] } },
+		displayOptions: { show: { resource: [J], operation: ['getAll', 'getAllPaged'] } },
 	} as INodeProperties);
 	props.push({
 		displayName: 'Limit',
@@ -774,17 +776,92 @@ function allProperties(): INodeProperties[] {
 		displayOptions: { show: { resource: [J], operation: ['update'] } },
 	} as INodeProperties);
 	props.push({
-		displayName: 'External ID',
-		name: 'searchExternalId',
+		displayName: 'Job Number',
+		name: 'jobSearchNumber',
 		type: 'string',
 		default: '',
+		description: 'Partial match on job number (maps to filters[number])',
 		displayOptions: { show: { resource: [J], operation: ['search'] } },
 	} as INodeProperties);
 	props.push({
-		displayName: 'Description (text search)',
-		name: 'searchDescription',
+		displayName: 'Customer Name',
+		name: 'jobSearchCustomerName',
 		type: 'string',
 		default: '',
+		description: 'Partial match on customer name (maps to filters[customer_name])',
+		displayOptions: { show: { resource: [J], operation: ['search'] } },
+	} as INodeProperties);
+	props.push({
+		displayName: 'Contact First Name',
+		name: 'jobSearchContactFirstName',
+		type: 'string',
+		default: '',
+		description: 'Partial match on contact first name (maps to filters[contact_first_name])',
+		displayOptions: { show: { resource: [J], operation: ['search'] } },
+	} as INodeProperties);
+	props.push({
+		displayName: 'Contact Last Name',
+		name: 'jobSearchContactLastName',
+		type: 'string',
+		default: '',
+		description: 'Partial match on contact last name (maps to filters[contact_last_name])',
+		displayOptions: { show: { resource: [J], operation: ['search'] } },
+	} as INodeProperties);
+	props.push({
+		displayName: 'Email',
+		name: 'jobSearchEmail',
+		type: 'string',
+		default: '',
+		description: 'Full match on contact email (maps to filters[email])',
+		displayOptions: { show: { resource: [J], operation: ['search'] } },
+	} as INodeProperties);
+	props.push({
+		displayName: 'Phone',
+		name: 'jobSearchPhone',
+		type: 'string',
+		default: '',
+		description: 'Partial match on contact phone (maps to filters[phone])',
+		placeholder: '214-555-1212',
+		displayOptions: { show: { resource: [J], operation: ['search'] } },
+	} as INodeProperties);
+	props.push({
+		displayName: 'Address',
+		name: 'jobSearchAddress',
+		type: 'string',
+		default: '',
+		description: 'Partial match on address (maps to filters[address])',
+		displayOptions: { show: { resource: [J], operation: ['search'] } },
+	} as INodeProperties);
+	props.push({
+		displayName: 'City',
+		name: 'jobSearchCity',
+		type: 'string',
+		default: '',
+		description: 'Full match on city (maps to filters[city])',
+		displayOptions: { show: { resource: [J], operation: ['search'] } },
+	} as INodeProperties);
+	props.push({
+		displayName: 'Zip Code',
+		name: 'jobSearchZipCode',
+		type: 'string',
+		default: '',
+		description: 'Full match on zip code (maps to filters[zip_code])',
+		displayOptions: { show: { resource: [J], operation: ['search'] } },
+	} as INodeProperties);
+	props.push({
+		displayName: 'Category',
+		name: 'jobSearchCategory',
+		type: 'string',
+		default: '',
+		description: 'Full match, comma-separated (maps to filters[category])',
+		displayOptions: { show: { resource: [J], operation: ['search'] } },
+	} as INodeProperties);
+	props.push({
+		displayName: 'Source',
+		name: 'jobSearchSource',
+		type: 'string',
+		default: '',
+		description: 'Full match, comma-separated (maps to filters[source])',
 		displayOptions: { show: { resource: [J], operation: ['search'] } },
 	} as INodeProperties);
 	props.push({
@@ -1311,21 +1388,43 @@ async function executeCustomer(
 			return [{ json: { success: true, customerId: id } }];
 		}
 		case 'search': {
-			const params: Record<string, unknown> = {};
-			if (p('searchName')) params.name = p('searchName');
-			if (p('searchEmail')) params.email = p('searchEmail');
-			if (p('searchPhone')) params.phone = p('searchPhone');
-			if (p('searchCity')) params.city = p('searchCity');
-			if (p('searchState')) params.state = p('searchState');
-			if (p('searchZipCode')) params.zipCode = p('searchZipCode');
-			if (p('searchType')) params.type = p('searchType');
+			// Removed searchState/searchType inputs are not supported by GET /customers filters.
+			// Fail loudly for saved workflows that still carry values instead of
+			// silently returning an unfiltered customer list.
+			if (p('searchState'))
+				throw new NodeOperationError(
+					ctx.getNode(),
+					'Customer Search no longer supports "State": the ServiceFusion GET /customers API exposes no matching filter. Use City or Zip Code instead.',
+				);
+			if (p('searchType'))
+				throw new NodeOperationError(
+					ctx.getNode(),
+					'Customer Search no longer supports "Type": the ServiceFusion GET /customers API exposes no matching filter. Remove it from this step.',
+				);
+			const params: Record<string, unknown> = { 'per-page': 50 };
+			if (p('searchName')) params['filters[name]'] = p('searchName');
+			if (p('searchContactFirstName'))
+				params['filters[contact_first_name]'] = p('searchContactFirstName');
+			if (p('searchContactLastName'))
+				params['filters[contact_last_name]'] = p('searchContactLastName');
+			if (p('searchEmail')) params['filters[email]'] = p('searchEmail');
+			if (p('searchPhone')) params['filters[phone]'] = p('searchPhone');
+			if (p('searchCity')) params['filters[city]'] = p('searchCity');
+			if (p('searchZipCode')) params['filters[postal_code]'] = p('searchZipCode');
+			// Never send an unfiltered Search: without a supported filter this would
+			// return unrelated records. Direct users to Get All for full lists.
+			if (!Object.keys(params).some((k) => k.startsWith('filters[')))
+				throw new NodeOperationError(
+					ctx.getNode(),
+					'Customer Search needs at least one filter (Name, Contact First/Last Name, Email, Phone, City, or Zip Code). For an unfiltered customer list, use "Get All" instead.',
+				);
 			const expand = p('customerExpand');
 			if (Array.isArray(expand) && expand.length) {
 				params.expand = (expand as string[]).join(',');
 			}
 			const r = await requestAdapter.request({
 				method: 'GET',
-				url: '/customers/search',
+				url: '/customers',
 				params,
 			});
 			return mapListResponse(r);
@@ -1405,18 +1504,72 @@ async function executeJob(
 			return [{ json: { success: true, jobId: id } }];
 		}
 		case 'search': {
-			const f: Record<string, unknown> = {};
-			if (p('jobCustomerId')) f.customerId = p('jobCustomerId');
+			// Removed searchExternalId/searchDescription inputs are not supported by
+			// GET /jobs filters. Fail loudly for saved workflows instead of silently
+			// returning an unfiltered job list.
+			if (p('searchExternalId'))
+				throw new NodeOperationError(
+					ctx.getNode(),
+					'Job Search no longer supports "External ID": the ServiceFusion GET /jobs API exposes no matching filter. Remove it from this step.',
+				);
+			if (p('searchDescription'))
+				throw new NodeOperationError(
+					ctx.getNode(),
+					'Job Search no longer supports "Description": the ServiceFusion GET /jobs API exposes no matching filter. Remove it from this step.',
+				);
+			// These inputs are Get All / Get All Paged only; GET /jobs exposes no
+			// matching search filter. Saved Search steps still carrying values fail
+			// loudly instead of sending a request that silently ignores them.
+			if (p('jobCustomerId'))
+				throw new NodeOperationError(
+					ctx.getNode(),
+					'Job Search no longer supports "Customer ID": filter by "Customer Name" instead, or use "Get All" for an unfiltered list.',
+				);
+			const legacyPriority = p('jobPriority');
+			if (Array.isArray(legacyPriority) && legacyPriority.length)
+				throw new NodeOperationError(
+					ctx.getNode(),
+					'Job Search no longer supports "Priority": the ServiceFusion GET /jobs API exposes no matching filter. Remove it from this step.',
+				);
+			if (p('jobTechnicianId'))
+				throw new NodeOperationError(
+					ctx.getNode(),
+					'Job Search no longer supports "Technician ID": the ServiceFusion GET /jobs API exposes no matching filter. Remove it from this step.',
+				);
+			if (p('scheduledDateFrom') || p('scheduledDateTo'))
+				throw new NodeOperationError(
+					ctx.getNode(),
+					'Job Search no longer supports "Scheduled Date": the ServiceFusion GET /jobs API exposes no matching search filter. Remove it from this step.',
+				);
+			const requestAdapter = adapter as ListRequestAdapter;
+			const params: Record<string, unknown> = { 'per-page': 50 };
 			const js = p('jobStatus');
-			if (Array.isArray(js) && js.length) f.status = js;
-			const jp = p('jobPriority');
-			if (Array.isArray(jp) && jp.length) f.priority = jp;
-			if (p('jobTechnicianId')) f.technicianId = p('jobTechnicianId');
-			if (p('scheduledDateFrom')) f.scheduledDateFrom = new Date(p('scheduledDateFrom') as string);
-			if (p('scheduledDateTo')) f.scheduledDateTo = new Date(p('scheduledDateTo') as string);
-			if (p('searchExternalId')) f.externalId = p('searchExternalId');
-			if (p('searchDescription')) f.description = p('searchDescription');
-			const r = await adapter.searchJobs(f);
+			if (Array.isArray(js) && js.length) params['filters[status]'] = (js as string[]).join(',');
+			if (p('jobSearchNumber')) params['filters[number]'] = p('jobSearchNumber');
+			if (p('jobSearchCustomerName')) params['filters[customer_name]'] = p('jobSearchCustomerName');
+			if (p('jobSearchContactFirstName'))
+				params['filters[contact_first_name]'] = p('jobSearchContactFirstName');
+			if (p('jobSearchContactLastName'))
+				params['filters[contact_last_name]'] = p('jobSearchContactLastName');
+			if (p('jobSearchEmail')) params['filters[email]'] = p('jobSearchEmail');
+			if (p('jobSearchPhone')) params['filters[phone]'] = p('jobSearchPhone');
+			if (p('jobSearchAddress')) params['filters[address]'] = p('jobSearchAddress');
+			if (p('jobSearchCity')) params['filters[city]'] = p('jobSearchCity');
+			if (p('jobSearchZipCode')) params['filters[zip_code]'] = p('jobSearchZipCode');
+			if (p('jobSearchCategory')) params['filters[category]'] = p('jobSearchCategory');
+			if (p('jobSearchSource')) params['filters[source]'] = p('jobSearchSource');
+			// Never send an unfiltered Search: without a supported filter this would
+			// return unrelated records. Direct users to Get All for full lists.
+			if (!Object.keys(params).some((k) => k.startsWith('filters[')))
+				throw new NodeOperationError(
+					ctx.getNode(),
+					'Job Search needs at least one filter (Status, Job Number, Customer Name, Contact First/Last Name, Email, Phone, Address, City, Zip Code, Category, or Source). For an unfiltered job list, use "Get All" instead.',
+				);
+			const r = await requestAdapter.request({
+				method: 'GET',
+				url: '/jobs',
+				params,
+			});
 			return mapListResponse(r);
 		}
 		case 'getAllPaged': {
@@ -1581,6 +1734,13 @@ async function executeEstimate(
 			if (p('estimateSearchRequestedDateTo'))
 				params['filters[requested_date][lte]'] = formatDateTime(
 					p('estimateSearchRequestedDateTo') as string,
+				);
+			// Never send an unfiltered Search: without a scope or supported filter
+			// this would return unrelated records. Direct users to Get All.
+			if (!jobId && !Object.keys(params).some((k) => k.startsWith('filters[')))
+				throw new NodeOperationError(
+					ctx.getNode(),
+					'Estimate Search needs at least one filter (Job ID, Status, Number, Customer Name, Contact, Address, Phone, Email, Category, Source, or a date range). For an unfiltered estimate list, use "Get All" instead.',
 				);
 			const r = await requestAdapter.request({
 				method: 'GET',
